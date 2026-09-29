@@ -43,10 +43,24 @@ else
     FULL_WALLET="$WALLET"
 fi
 
-# ── Pecah POOL (dipisah koma) jadi array ──
-# Contoh: POOL="stratum+tcp://qtc.kryptex.network:7049,stratum+tcp://qtc-sg.kryptex.network:7049"
+# ── Kumpulkan semua pool jadi array ──
+# Cara isi (boleh dicampur):
+#   1) POOL   = satu atau banyak pool, dipisah koma (,) atau titik koma (;)
+#   2) POOL2..POOL8 = pool tambahan, satu variabel satu pool
+#      (berguna untuk platform seperti Salad yang memecah nilai berkoma di form ENV)
+# Contoh:
+#   POOL="stratum+tcp://qtc.kryptex.network:7049"
+#   POOL2="stratum+tcp://qtc-sg.kryptex.network:7049"
+#   POOL3="stratum+tcp://qtc-eu.kryptex.network:7049"
+ALL_POOL="$POOL"
+for n in 2 3 4 5 6 7 8; do
+    v="POOL$n"
+    [ -n "${!v}" ] && ALL_POOL="${ALL_POOL},${!v}"
+done
+ALL_POOL="${ALL_POOL//;/,}"
+
 POOLS=()
-IFS=',' read -ra _RAW_POOLS <<< "$POOL"
+IFS=',' read -ra _RAW_POOLS <<< "$ALL_POOL"
 for p in "${_RAW_POOLS[@]}"; do
     p="${p// /}"
     [ -n "$p" ] && POOLS+=("$p")
