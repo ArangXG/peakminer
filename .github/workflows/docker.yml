@@ -1,0 +1,76 @@
+name: Build & Push Docker
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */6 * * *'   # tiap 6 jam, cek update PeakMiner terbaru
+  workflow_dispatch: {}    # bisa dipicu manual dari tab Actions kalau mau cek sekarang
+
+permissions:
+  contents: write   # perlu buat commit balik file .peakminer_version
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      latest_version: ${{ steps.check.outputs.latest_version }}
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cek versi PeakMiner terbaru
+        id: check
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/peakminer/peakminer/releases/latest \
+            | grep -m1 '"tag_name"' \
+            | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+          echo "Versi terbaru di GitHub : $LATEST"
+
+          CURRENT=""
+          if [ -f .peakminer_version ]; then
+            CURRENT=$(cat .peakminer_version)
+          fi
+          echo "Versi tercatat terakhir : ${CURRENT:-(belum ada)}"
+
+          echo "latest_version=$LATEST" >> "$GITHUB_OUTPUT"
+
+          if [ "$LATEST" != "$CURRENT" ] || [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            echo "⏭️  Versi sama dan ini run terjadwal, build di-skip."
+          fi
+
+  build:
+    needs: check-version
+    if: needs.check-version.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            PEAK_VERSION=${{ needs.check-version.outputs.latest_version }}
+          tags: |
+            tarxg/qtcpeak:latest
+            tarxg/qtcpeak:${{ needs.check-version.outputs.latest_version }}
+
+      - name: Catat versi terbaru
+        run: echo "${{ needs.check-version.outputs.latest_version }}" > .peakminer_version
+
+      - name: Commit versi terbaru
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update PeakMiner ke ${{ needs.check-version.outputs.latest_version }}"
+          file_pattern: .peakminer_version
