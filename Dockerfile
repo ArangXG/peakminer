@@ -28,9 +28,13 @@ RUN test -n "$PEAK_VERSION" \
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# ── GPU Mining · Quantus · NVIDIA ────────────────────────────
-ENV QTC_POOL=stratum+tcp://qtc.kryptex.network:7049
-ENV QTC_WALLET=
-ENV QTC_WORKER=
+# ── GPU Mining · PeakMiner · NVIDIA ──────────────────────────
+# Semua diisi lewat "docker run -e ..." (tidak ada yang hard code)
+ENV COIN=
+ENV POOL=
+ENV WALLET=
+ENV WORKER=
+# Opsional: flag tambahan untuk peakminer, contoh: "--no-color"
+ENV EXTRA_ARGS=
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
