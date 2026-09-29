@@ -63,8 +63,8 @@ jobs:
           build-args: |
             PEAK_VERSION=${{ needs.check-version.outputs.latest_version }}
           tags: |
-            tarxg/qtcpeak:latest
-            tarxg/qtcpeak:${{ needs.check-version.outputs.latest_version }}
+            tarxg/peakminer:latest
+            tarxg/peakminer:${{ needs.check-version.outputs.latest_version }}
 
       - name: Catat versi terbaru
         run: echo "${{ needs.check-version.outputs.latest_version }}" > .peakminer_version
