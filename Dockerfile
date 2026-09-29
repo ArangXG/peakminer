@@ -29,12 +29,22 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # ── GPU Mining · PeakMiner · NVIDIA ──────────────────────────
-# Semua diisi lewat "docker run -e ..." (tidak ada yang hard code)
+# Semua diisi lewat ENV (di Salad: Container Group → Environment Variables)
 ENV COIN=
+# Satu atau beberapa pool dipisah koma. Urutan = prioritas.
+# Contoh: stratum+tcp://host1:7049,stratum+tcp://host2:7049
 ENV POOL=
 ENV WALLET=
 ENV WORKER=
-# Opsional: flag tambahan untuk peakminer, contoh: "--no-color"
+# Opsional: flag tambahan untuk peakminer, contoh: "--keepalive"
 ENV EXTRA_ARGS=
+
+# ── Ganti pool otomatis (opsional) ───────────────────────────
+# Gagal konek berapa kali berturut-turut sebelum pindah ke pool berikutnya (0 = matikan)
+ENV MAX_FAILS=3
+# Jeda antar error (detik) yang dianggap masih satu rangkaian gagal
+ENV RESET_AFTER=180
+# Setelah semua pool dicoba N putaran dan tetap gagal, container exit 1 (0 = tidak pernah keluar)
+ENV MAX_ROUNDS=0
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
